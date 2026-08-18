@@ -2773,6 +2773,24 @@ window_pane_get_pane_lines(struct window_pane *wp)
 	return (options_get_number(oo, "pane-border-lines"));
 }
 
+u_int
+window_get_pane_padding(struct window *w)
+{
+	return (options_get_number(w->options, "pane-padding"));
+}
+
+u_int
+window_pane_get_pane_padding(struct window_pane *wp)
+{
+	struct options	*oo;
+
+	if (!window_pane_is_floating(wp))
+		oo = wp->window->options;
+	else
+		oo = wp->options;
+	return (options_get_number(oo, "pane-padding"));
+}
+
 int
 window_get_pane_status(struct window *w)
 {

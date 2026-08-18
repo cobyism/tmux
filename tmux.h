@@ -3820,6 +3820,8 @@ enum pane_lines	 window_pane_get_pane_lines(struct window_pane *);
 enum pane_lines	 window_get_pane_lines(struct window *);
 int		 window_get_pane_status(struct window *);
 int		 window_pane_get_pane_status(struct window_pane *);
+u_int		 window_get_pane_padding(struct window *);
+u_int		 window_pane_get_pane_padding(struct window_pane *);
 struct style_range *window_pane_status_get_range(struct window_pane *, u_int,
 		     u_int);
 int		 window_pane_is_floating(struct window_pane *);

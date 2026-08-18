@@ -1611,6 +1611,16 @@ const struct options_table_entry options_table[] = {
 	  .text = "Style of the pane status lines."
 	},
 
+	{ .name = "pane-padding",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .minimum = 0,
+	  .maximum = 1,
+	  .default_num = 0,
+	  .text = "Number of blank cells to inset each pane's content by on "
+		  "all sides. Currently only zero or one cell is supported."
+	},
+
 	{ .name = "pane-colours",
 	  .type = OPTIONS_TABLE_COLOUR,
 	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,

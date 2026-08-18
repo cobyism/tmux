@@ -446,7 +446,7 @@ layout_fix_panes(struct window *w, struct window_pane *skip)
 	struct layout_cell	*lc, *root = w->layout_root;
 	int			 status, sb_w, sb_pad;
 	int			 old_xoff, old_yoff, changed = 0;
-	u_int			 sx, sy, old_sx, old_sy;
+	u_int			 sx, sy, old_sx, old_sy, pad;
 
 	TAILQ_FOREACH(wp, &w->panes, entry) {
 		if ((lc = wp->layout_cell) == NULL || wp == skip)
@@ -493,6 +493,20 @@ layout_fix_panes(struct window *w, struct window_pane *skip)
 				else
 					sx = sx - sb_w - sb_pad;
 			wp->flags |= PANE_REDRAWSCROLLBAR;
+		}
+
+		/*
+		 * Drop padding entirely for a pane too small to keep it
+		 * rather than shrink below PANE_MINIMUM.
+		 */
+		pad = window_pane_get_pane_padding(wp);
+		if (pad != 0 &&
+		    sx >= 2 * pad + PANE_MINIMUM &&
+		    sy >= 2 * pad + PANE_MINIMUM) {
+			wp->xoff += pad;
+			wp->yoff += pad;
+			sx -= 2 * pad;
+			sy -= 2 * pad;
 		}
 
 		window_pane_resize(wp, sx, sy);

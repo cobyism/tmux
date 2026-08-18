@@ -69,8 +69,9 @@ enum redraw_span_type {
 	REDRAW_SPAN_BORDER,	/* pane border */
 	REDRAW_SPAN_SCROLLBAR,	/* pane scrollbar */
 	REDRAW_SPAN_MENU,	/* window menu */
+	REDRAW_SPAN_PADDING,	/* pane-padding inset, plain and unstyled */
 };
-#define REDRAW_SPAN_TYPES 7
+#define REDRAW_SPAN_TYPES 8
 
 /* Border connections to adjacent cells. */
 #define REDRAW_BORDER_L 0x1
@@ -94,6 +95,7 @@ enum redraw_span_type {
 #define REDRAW_STATUS 0x40
 #define REDRAW_MENU 0x80
 #define REDRAW_OVERLAY 0x100
+#define REDRAW_PADDING 0x200
 
 /* Draw everything. */
 #define REDRAW_ALL 0x7fffffff
@@ -586,6 +588,45 @@ redraw_mark_border_cell(struct redraw_build_ctx *bctx, int wx, int wy,
 	bc->data.b.cell_type = redraw_get_cell_type(mask);
 }
 
+/* Mark one pane-padding cell, if it is still empty. */
+static void
+redraw_mark_padding_cell(struct redraw_build_ctx *bctx, int wx, int wy)
+{
+	struct redraw_build_cell	*bc;
+	u_int				 x, y;
+
+	if (!redraw_window_to_scene(bctx, wx, wy, &x, &y))
+		return;
+	bc = redraw_get_build_cell(bctx, x, y);
+	if (bc->data.type != REDRAW_SPAN_EMPTY)
+		return;
+	memset(bc, 0, sizeof *bc);
+	bc->data.type = REDRAW_SPAN_PADDING;
+}
+
+/*
+ * Mark the pane-padding band between a pane's content and its border ring
+ * (left/right/top/bottom, which already include pad). Plain and unstyled,
+ * unlike the general-purpose "inside" fill-character cells.
+ */
+static void
+redraw_mark_pane_padding(struct redraw_build_ctx *bctx, int pad, int left,
+    int right, int top, int bottom)
+{
+	int	wx, wy, i;
+
+	for (i = 1; i <= pad; i++) {
+		for (wx = left + 1; wx < right; wx++) {
+			redraw_mark_padding_cell(bctx, wx, top + i);
+			redraw_mark_padding_cell(bctx, wx, bottom - i);
+		}
+		for (wy = top + 1; wy < bottom; wy++) {
+			redraw_mark_padding_cell(bctx, left + i, wy);
+			redraw_mark_padding_cell(bctx, right - i, wy);
+		}
+	}
+}
+
 /*
  * Mark border cells for a pane status line, keeping the border cell type for
  * drawing.
@@ -680,21 +721,29 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 	int		pane_status, left, right, top, bottom, wx, wy;
 	int		mark_top, mark_bottom, mark_left, mark_right, mask = 0;
 	int		floating = window_pane_is_floating(wp);
+	int		pad = window_pane_get_pane_padding(wp);
 
 	if (floating && pane_lines == PANE_LINES_NONE)
 		return;
 	pane_status = window_pane_get_pane_status(wp);
 
-	left = wp->xoff - 1;
-	right = wp->xoff + wp->sx;
+	/*
+	 * The border (or shared border with an adjacent pane) sits at the
+	 * true cell boundary, one pad cell further out than the pane's own
+	 * (shrunk) content area. The pad band in between is left untouched
+	 * here and keeps its default REDRAW_SPAN_EMPTY state, which is
+	 * filled in with the window's blank/fill cell at draw time.
+	 */
+	left = wp->xoff - 1 - pad;
+	right = wp->xoff + wp->sx + pad;
 	if (sb_w != 0) {
 		if (sb_left)
 			left -= sb_w;
 		else
 			right += sb_w;
 	}
-	top = wp->yoff - 1;
-	bottom = wp->yoff + wp->sy;
+	top = wp->yoff - 1 - pad;
+	bottom = wp->yoff + wp->sy + pad;
 
 	mark_left = (left >= 0);
 	mark_top = (top >= 0);
@@ -766,6 +815,8 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 
 	redraw_mark_border_status(bctx, wp, left, right, top, bottom);
 	redraw_mark_border_arrows(bctx, wp, left, right, top, bottom);
+
+	redraw_mark_pane_padding(bctx, pad, left, right, top, bottom);
 }
 
 /*
@@ -926,6 +977,7 @@ redraw_compare_data(struct redraw_build_cell *a, struct redraw_build_cell *b)
 		return (1);
 	case REDRAW_SPAN_OUTSIDE:
 	case REDRAW_SPAN_EMPTY:
+	case REDRAW_SPAN_PADDING:
 		return (1);
 	}
 	return (0);
@@ -1237,6 +1289,8 @@ redraw_draw_border_span(struct redraw_draw_ctx *dctx,
 			window_get_fill_cell(w, 0, &gc);
 		else if (span->data.type == REDRAW_SPAN_EMPTY)
 			window_get_fill_cell(w, 1, &gc);
+		else if (span->data.type == REDRAW_SPAN_PADDING)
+			memcpy(&gc, &grid_default_cell, sizeof gc);
 		else {
 			if (span->data.type != REDRAW_SPAN_BORDER)
 				pane_lines = PANE_LINES_SINGLE;
@@ -1408,6 +1462,7 @@ redraw_draw_span(struct redraw_draw_ctx *dctx, struct redraw_span *span,
 		case REDRAW_SPAN_BORDER:
 		case REDRAW_SPAN_EMPTY:
 		case REDRAW_SPAN_OUTSIDE:
+		case REDRAW_SPAN_PADDING:
 			redraw_draw_border_span(dctx, span, x, y, n);
 			break;
 		case REDRAW_SPAN_STATUS:
@@ -1512,6 +1567,10 @@ redraw_draw_lines(struct redraw_draw_ctx *dctx, int flags)
 					break;
 				case REDRAW_SPAN_MENU:
 					if (~flags & REDRAW_MENU)
+						continue;
+					break;
+				case REDRAW_SPAN_PADDING:
+					if (~flags & REDRAW_PADDING)
 						continue;
 					break;
 				default:
