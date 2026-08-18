@@ -1611,14 +1611,28 @@ const struct options_table_entry options_table[] = {
 	  .text = "Style of the pane status lines."
 	},
 
-	{ .name = "pane-padding",
+	{ .name = "pane-padding-x",
 	  .type = OPTIONS_TABLE_NUMBER,
 	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
 	  .minimum = 0,
-	  .maximum = 1,
+	  .maximum = USHRT_MAX,
 	  .default_num = 0,
 	  .text = "Number of blank cells to inset each pane's content by on "
-		  "all sides. Currently only zero or one cell is supported."
+		  "its left and right. A pane too small to keep the "
+		  "requested padding on an axis has that axis's padding "
+		  "dropped rather than shrunk below the minimum pane size."
+	},
+
+	{ .name = "pane-padding-y",
+	  .type = OPTIONS_TABLE_NUMBER,
+	  .scope = OPTIONS_TABLE_WINDOW|OPTIONS_TABLE_PANE,
+	  .minimum = 0,
+	  .maximum = USHRT_MAX,
+	  .default_num = 0,
+	  .text = "Number of blank cells to inset each pane's content by on "
+		  "its top and bottom. A pane too small to keep the "
+		  "requested padding on an axis has that axis's padding "
+		  "dropped rather than shrunk below the minimum pane size."
 	},
 
 	{ .name = "pane-colours",

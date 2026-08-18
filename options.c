@@ -1414,7 +1414,8 @@ options_push_changes(const char *name)
 	    strcmp(name, "pane-border-indicators") == 0 ||
 	    strcmp(name, "pane-border-lines") == 0 ||
 	    strcmp(name, "pane-border-status") == 0 ||
-	    strcmp(name, "pane-padding") == 0 ||
+	    strcmp(name, "pane-padding-x") == 0 ||
+	    strcmp(name, "pane-padding-y") == 0 ||
 	    strcmp(name, "pane-scrollbars") == 0 ||
 	    strcmp(name, "pane-scrollbars-timeout") == 0 ||
 	    strcmp(name, "pane-scrollbars-position") == 0 ||
@@ -1438,7 +1439,8 @@ options_push_changes(const char *name)
 	if (strcmp(name, "pane-border-status") == 0 ||
 	    strcmp(name, "pane-scrollbars") == 0 ||
 	    strcmp(name, "pane-scrollbars-position") == 0 ||
-	    strcmp(name, "pane-padding") == 0) {
+	    strcmp(name, "pane-padding-x") == 0 ||
+	    strcmp(name, "pane-padding-y") == 0) {
 		RB_FOREACH(w, windows, &windows) {
 			w->sb = options_get_number(w->options,
 			    "pane-scrollbars");

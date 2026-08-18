@@ -606,20 +606,23 @@ redraw_mark_padding_cell(struct redraw_build_ctx *bctx, int wx, int wy)
 
 /*
  * Mark the pane-padding band between a pane's content and its border ring
- * (left/right/top/bottom, which already include pad). Plain and unstyled,
- * unlike the general-purpose "inside" fill-character cells.
+ * (left/right/top/bottom, which already include pad_x/pad_y). Plain and
+ * unstyled, unlike the general-purpose "inside" fill-character cells. The
+ * horizontal and vertical bands have independent thickness.
  */
 static void
-redraw_mark_pane_padding(struct redraw_build_ctx *bctx, int pad, int left,
-    int right, int top, int bottom)
+redraw_mark_pane_padding(struct redraw_build_ctx *bctx, int pad_x, int pad_y,
+    int left, int right, int top, int bottom)
 {
 	int	wx, wy, i;
 
-	for (i = 1; i <= pad; i++) {
+	for (i = 1; i <= pad_y; i++) {
 		for (wx = left + 1; wx < right; wx++) {
 			redraw_mark_padding_cell(bctx, wx, top + i);
 			redraw_mark_padding_cell(bctx, wx, bottom - i);
 		}
+	}
+	for (i = 1; i <= pad_x; i++) {
 		for (wy = top + 1; wy < bottom; wy++) {
 			redraw_mark_padding_cell(bctx, left + i, wy);
 			redraw_mark_padding_cell(bctx, right - i, wy);
@@ -721,7 +724,8 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 	int		pane_status, left, right, top, bottom, wx, wy;
 	int		mark_top, mark_bottom, mark_left, mark_right, mask = 0;
 	int		floating = window_pane_is_floating(wp);
-	int		pad = window_pane_get_pane_padding(wp);
+	int		pad_x = window_pane_get_pane_padding_x(wp);
+	int		pad_y = window_pane_get_pane_padding_y(wp);
 
 	if (floating && pane_lines == PANE_LINES_NONE)
 		return;
@@ -729,21 +733,22 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 
 	/*
 	 * The border (or shared border with an adjacent pane) sits at the
-	 * true cell boundary, one pad cell further out than the pane's own
-	 * (shrunk) content area. The pad band in between is left untouched
-	 * here and keeps its default REDRAW_SPAN_EMPTY state, which is
-	 * filled in with the window's blank/fill cell at draw time.
+	 * true cell boundary, pad_x/pad_y cells further out than the pane's
+	 * own (shrunk) content area. The pad band in between is left
+	 * untouched here and keeps its default REDRAW_SPAN_EMPTY state,
+	 * which is filled in with the window's blank/fill cell at draw
+	 * time.
 	 */
-	left = wp->xoff - 1 - pad;
-	right = wp->xoff + wp->sx + pad;
+	left = wp->xoff - 1 - pad_x;
+	right = wp->xoff + wp->sx + pad_x;
 	if (sb_w != 0) {
 		if (sb_left)
 			left -= sb_w;
 		else
 			right += sb_w;
 	}
-	top = wp->yoff - 1 - pad;
-	bottom = wp->yoff + wp->sy + pad;
+	top = wp->yoff - 1 - pad_y;
+	bottom = wp->yoff + wp->sy + pad_y;
 
 	mark_left = (left >= 0);
 	mark_top = (top >= 0);
@@ -816,7 +821,7 @@ redraw_mark_pane_borders(struct redraw_build_ctx *bctx, struct window_pane *wp,
 	redraw_mark_border_status(bctx, wp, left, right, top, bottom);
 	redraw_mark_border_arrows(bctx, wp, left, right, top, bottom);
 
-	redraw_mark_pane_padding(bctx, pad, left, right, top, bottom);
+	redraw_mark_pane_padding(bctx, pad_x, pad_y, left, right, top, bottom);
 }
 
 /*

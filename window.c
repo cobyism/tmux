@@ -2774,13 +2774,13 @@ window_pane_get_pane_lines(struct window_pane *wp)
 }
 
 u_int
-window_get_pane_padding(struct window *w)
+window_get_pane_padding_x(struct window *w)
 {
-	return (options_get_number(w->options, "pane-padding"));
+	return (options_get_number(w->options, "pane-padding-x"));
 }
 
 u_int
-window_pane_get_pane_padding(struct window_pane *wp)
+window_pane_get_pane_padding_x(struct window_pane *wp)
 {
 	struct options	*oo;
 
@@ -2788,7 +2788,25 @@ window_pane_get_pane_padding(struct window_pane *wp)
 		oo = wp->window->options;
 	else
 		oo = wp->options;
-	return (options_get_number(oo, "pane-padding"));
+	return (options_get_number(oo, "pane-padding-x"));
+}
+
+u_int
+window_get_pane_padding_y(struct window *w)
+{
+	return (options_get_number(w->options, "pane-padding-y"));
+}
+
+u_int
+window_pane_get_pane_padding_y(struct window_pane *wp)
+{
+	struct options	*oo;
+
+	if (!window_pane_is_floating(wp))
+		oo = wp->window->options;
+	else
+		oo = wp->options;
+	return (options_get_number(oo, "pane-padding-y"));
 }
 
 int

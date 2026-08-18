@@ -446,7 +446,7 @@ layout_fix_panes(struct window *w, struct window_pane *skip)
 	struct layout_cell	*lc, *root = w->layout_root;
 	int			 status, sb_w, sb_pad;
 	int			 old_xoff, old_yoff, changed = 0;
-	u_int			 sx, sy, old_sx, old_sy, pad;
+	u_int			 sx, sy, old_sx, old_sy, pad_x, pad_y;
 
 	TAILQ_FOREACH(wp, &w->panes, entry) {
 		if ((lc = wp->layout_cell) == NULL || wp == skip)
@@ -496,17 +496,19 @@ layout_fix_panes(struct window *w, struct window_pane *skip)
 		}
 
 		/*
-		 * Drop padding entirely for a pane too small to keep it
-		 * rather than shrink below PANE_MINIMUM.
+		 * Drop padding on an axis for a pane too small to keep it on
+		 * that axis, rather than shrink below PANE_MINIMUM. The two
+		 * axes are independent.
 		 */
-		pad = window_pane_get_pane_padding(wp);
-		if (pad != 0 &&
-		    sx >= 2 * pad + PANE_MINIMUM &&
-		    sy >= 2 * pad + PANE_MINIMUM) {
-			wp->xoff += pad;
-			wp->yoff += pad;
-			sx -= 2 * pad;
-			sy -= 2 * pad;
+		pad_x = window_pane_get_pane_padding_x(wp);
+		if (pad_x != 0 && sx >= 2 * pad_x + PANE_MINIMUM) {
+			wp->xoff += pad_x;
+			sx -= 2 * pad_x;
+		}
+		pad_y = window_pane_get_pane_padding_y(wp);
+		if (pad_y != 0 && sy >= 2 * pad_y + PANE_MINIMUM) {
+			wp->yoff += pad_y;
+			sy -= 2 * pad_y;
 		}
 
 		window_pane_resize(wp, sx, sy);

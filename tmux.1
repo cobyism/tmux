@@ -5977,14 +5977,21 @@ see the
 section.
 Attributes are ignored.
 .Pp
-.It Ic pane\-padding Ar number
+.It Ic pane\-padding\-x Ar number
 Set the number of blank cells used to inset each pane's content from its
-edges on all sides.
-Currently only
+left and right edges.
 .Ic 0
-(off, the default) and
-.Ic 1
-are supported.
+(the default) turns this off.
+A pane too narrow to keep the requested padding has it dropped rather
+than being shrunk below the minimum pane size.
+.Pp
+.It Ic pane\-padding\-y Ar number
+Set the number of blank cells used to inset each pane's content from its
+top and bottom edges.
+.Ic 0
+(the default) turns this off.
+A pane too short to keep the requested padding has it dropped rather
+than being shrunk below the minimum pane size.
 .Pp
 .It Ic popup\-style Ar style
 Set the popup style.
